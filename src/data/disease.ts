@@ -9,7 +9,7 @@ export type DiseaseInfo = {
 };
 
 export const DISEASES: Record<string, DiseaseInfo> = {
-    "tomato-early-blight": {
+    "potato-early-blight": {
         crop: "Tomato",
         disease: "Early Blight",
         description:

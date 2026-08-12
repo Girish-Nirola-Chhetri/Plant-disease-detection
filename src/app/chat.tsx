@@ -1,5 +1,10 @@
 import { useState } from "react";
-import { KeyboardAvoidingView, Platform, SafeAreaView, View } from "react-native";
+import {
+    KeyboardAvoidingView,
+    Platform,
+    SafeAreaView,
+    View,
+} from "react-native";
 import { useLocalSearchParams } from "expo-router";
 
 import ChatHeader from "@/components/chat/ChatHeader";
@@ -7,7 +12,11 @@ import ChatList, {
     type ChatMessage,
 } from "@/components/chat/ChatList";
 import ChatInput from "@/components/chat/ChatInput";
-import { askAI, type ChatMessage as APIChatMessage } from "@/services/ai/chat";
+
+import {
+    askAI,
+    type ChatMessage as APIChatMessage,
+} from "@/services/ai/chat";
 
 export default function ChatScreen() {
     const { crop, disease } = useLocalSearchParams<{
@@ -16,6 +25,7 @@ export default function ChatScreen() {
     }>();
 
     const [message, setMessage] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
 
     const [messages, setMessages] = useState<ChatMessage[]>([
         {
@@ -28,7 +38,7 @@ export default function ChatScreen() {
     const handleSend = async () => {
         const trimmedMessage = message.trim();
 
-        if (!trimmedMessage) {
+        if (!trimmedMessage || isLoading) {
             return;
         }
 
@@ -38,40 +48,48 @@ export default function ChatScreen() {
             isUser: true,
         };
 
+        /*
+         * Build the conversation before updating state.
+         * This guarantees that the latest user message
+         * is included in the API request.
+         */
+        const conversation: APIChatMessage[] = [
+            ...messages.map((item) => ({
+                role: item.isUser
+                    ? ("user" as const)
+                    : ("assistant" as const),
+                content: item.message,
+            })),
+            {
+                role: "user",
+                content: trimmedMessage,
+            },
+        ];
+
         setMessages((current) => [
             ...current,
             userMessage,
         ]);
 
         setMessage("");
+        setIsLoading(true);
 
         try {
-            /*
-             * Convert the UI messages into the format
-             * expected by the backend.
-             */
-            const conversation: APIChatMessage[] = [
-                ...messages.map((item) => ({
-                    role: item.isUser
-                        ? ("user" as const)
-                        : ("assistant" as const),
-                    content: item.message,
-                })),
-                {
-                    role: "user",
-                    content: trimmedMessage,
-                },
-            ];
-
             const response = await askAI({
                 crop,
                 disease,
+
+                /*
+                 * We will connect the local disease
+                 * dataset here later.
+                 */
                 context: {
                     description: "",
                     symptoms: [],
                     treatment: [],
                     prevention: [],
                 },
+
                 messages: conversation,
             });
 
@@ -86,7 +104,10 @@ export default function ChatScreen() {
                 aiMessage,
             ]);
         } catch (error) {
-            console.error("AI request failed:", error);
+            console.error(
+                "AI request failed:",
+                error
+            );
 
             const errorMessage: ChatMessage = {
                 id: `${Date.now()}-error`,
@@ -99,6 +120,8 @@ export default function ChatScreen() {
                 ...current,
                 errorMessage,
             ]);
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -109,7 +132,7 @@ export default function ChatScreen() {
                 behavior={
                     Platform.OS === "ios"
                         ? "padding"
-                        : undefined
+                        : "height"
                 }
             >
                 <ChatHeader
@@ -118,7 +141,9 @@ export default function ChatScreen() {
                 />
 
                 <View className="flex-1">
-                    <ChatList messages={messages} />
+                    <ChatList
+                        messages={messages}
+                    />
                 </View>
 
                 <ChatInput

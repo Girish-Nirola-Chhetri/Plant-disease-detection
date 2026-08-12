@@ -21,7 +21,7 @@ export type ChatResponse = {
     reply: string;
 };
 
-const API_URL = "http://YOUR_PC_IP:3000";
+const API_URL = "http://10.28.24.246:3000";
 
 export async function askAI(
     request: ChatRequest
@@ -38,6 +38,14 @@ export async function askAI(
     );
 
     if (!response.ok) {
+        const errorText = await response.text();
+
+        console.error(
+            "AI API error:",
+            response.status,
+            errorText
+        );
+
         throw new Error(
             `AI request failed: ${response.status}`
         );
