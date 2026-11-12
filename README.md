@@ -1,8 +1,14 @@
-# Welcome to your Expo app 👋
+# Plant Disease Detection App
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+An Expo (React Native) app that identifies a plant disease from a leaf photo and lets you ask an AI assistant follow-up questions about it.
 
-## Get started
+- **On-device detection:** a bundled ONNX model (`src/assets/models/plant_disease.onnx`) classifies the photo offline into 38 crop/disease classes.
+- **Local disease info:** symptoms, treatment and prevention shown without internet (`src/data/disease.ts`). Not every class has an entry yet.
+- **AI chat:** online follow-up questions, answered by the companion API in the `pbl-plant-disease` repository (`plant disease detection server/server`).
+
+The app is native-only (Android/iOS). The ONNX runtime does not run in a browser, so there is no web target.
+
+## Setup
 
 1. Install dependencies
 
@@ -10,47 +16,24 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
    npm install
    ```
 
-2. Start the app
+2. Point the app at the API: copy `.env.example` to `.env` and set `EXPO_PUBLIC_API_URL`.
+   On a real phone use your computer's LAN IP (for example `http://192.168.1.10:3000`), not `localhost`.
+   Release builds only allow HTTPS, so deploy the API behind TLS for production.
+
+3. Start the API (see its `.env.example`), then run a development build:
 
    ```bash
+   npx expo run:android   # or: npx expo run:ios
    npx expo start
    ```
 
-In the output, you'll find options to open the app in a
+   `onnxruntime-react-native` is a native module, so Expo Go cannot run this app; use a development build.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## Scripts
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
-```
-
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-### Other setup steps
-
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+| Command | What it does |
+| --- | --- |
+| `npm start` | Start the Metro dev server |
+| `npm run android` / `npm run ios` | Build and run a native development build |
+| `npm run typecheck` | Type-check with TypeScript |
+| `npm run lint` | Lint with Expo's ESLint config |
