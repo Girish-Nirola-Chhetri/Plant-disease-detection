@@ -22,13 +22,20 @@ export async function predictDisease( imageUri: string ): Promise<DiseasePredict
         [1, 3, 224, 224]
     );
 
-    // 4. Run inference
+    // 4. Run inference (use the model's own input/output names)
+    const inputName = session.inputNames[0];
+    const outputName = session.outputNames[0];
+
+    if (!inputName || !outputName) {
+        throw new Error("ONNX model has no inputs or outputs");
+    }
+
     const outputs = await session.run({
-        input: inputTensor,
+        [inputName]: inputTensor,
     });
 
     // 5. Get model output
-    const output = outputs.output;
+    const output = outputs[outputName];
 
     if (!output) {
         throw new Error("ONNX model returned no output");

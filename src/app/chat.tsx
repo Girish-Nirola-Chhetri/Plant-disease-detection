@@ -14,15 +14,23 @@ import ChatList, {
 import ChatInput from "@/components/chat/ChatInput";
 
 import {
+    AIRequestError,
     askAI,
     type ChatMessage as APIChatMessage,
 } from "@/services/ai/chat";
+import { getDiseaseInfo } from "@/data/getDiseaseInfo";
+
+// The API accepts at most 20 messages per request.
+const MAX_API_MESSAGES = 20;
 
 export default function ChatScreen() {
-    const { crop, disease } = useLocalSearchParams<{
+    const { crop, disease, slug } = useLocalSearchParams<{
         crop: string;
         disease: string;
+        slug?: string;
     }>();
+
+    const diseaseInfo = slug ? getDiseaseInfo(slug) : null;
 
     const [message, setMessage] = useState("");
     const [isLoading, setIsLoading] = useState(false);
@@ -61,10 +69,10 @@ export default function ChatScreen() {
                 content: item.message,
             })),
             {
-                role: "user",
+                role: "user" as const,
                 content: trimmedMessage,
             },
-        ];
+        ].slice(-MAX_API_MESSAGES);
 
         setMessages((current) => [
             ...current,
@@ -80,14 +88,14 @@ export default function ChatScreen() {
                 disease,
 
                 /*
-                 * We will connect the local disease
-                 * dataset here later.
+                 * Send the local disease information so the AI
+                 * answers from it instead of guessing.
                  */
                 context: {
-                    description: "",
-                    symptoms: [],
-                    treatment: [],
-                    prevention: [],
+                    description: diseaseInfo?.description ?? "",
+                    symptoms: diseaseInfo?.symptoms ?? [],
+                    treatment: diseaseInfo?.treatment ?? [],
+                    prevention: diseaseInfo?.prevention ?? [],
                 },
 
                 messages: conversation,
@@ -112,7 +120,9 @@ export default function ChatScreen() {
             const errorMessage: ChatMessage = {
                 id: `${Date.now()}-error`,
                 message:
-                    "I couldn't connect to the AI service. Please try again when you're online.",
+                    error instanceof AIRequestError
+                        ? error.message
+                        : "Something went wrong. Please try again.",
                 isUser: false,
             };
 
